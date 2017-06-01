@@ -1,11 +1,9 @@
+# This is the user-interface definition of the Shiny web application
+# 'Simulation of Optimal Foraging'.
+# Author: Manon Schutte
+# June 2017
 #
-# This is the user-interface definition of a Shiny web application. You can
 # run the application by clicking 'Run App' above.
-#
-# Find out more about building applications with Shiny here:
-# 
-#    http://shiny.rstudio.com/
-#
 
 library(shiny)
 library(markdown)
@@ -14,25 +12,26 @@ library(markdown)
 shinyUI(fluidPage(
   
   # Application title
-  titlePanel("Old Faithful Geyser Data"),
+  titlePanel("Optimal Foraging in human memory search"),
   
   # Sidebar with a slider input for number of bins 
   sidebarLayout(
     sidebarPanel(
-       sliderInput("animals",
+       sliderInput("animalsLength",
                    "Number of Animals:",
                    min = 10,
                    max = 50,
-                   value = 30)
+                   value = 10),
+       # Actionbutton
+       actionButton("goButton", "Search!"),
+       tableOutput("generateditems")
     ),
-    # Actionbutton
-    #actionButton()
-    
-    
+
     # Show a plot of the generated distribution
     mainPanel(
       tabsetPanel(
-        tabPanel("Optimal Foraging", plotOutput("foraging")),
+        tabPanel("Optimal Foraging", 
+                 radialNetworkOutput("foragingnetwork")),
         tabPanel("Theory of Optimal Foraging", includeMarkdown("explanation.Rmd"))
       )
     )

@@ -14,69 +14,76 @@ freq <- freq[order(freq$V2, decreasing = T), ]
 for (i in 1:nrow(datapatches)){
   datapatches$frequency[i] <- freq$V2[which(freq$V1 == as.character(datapatches$V1[i]), arr.ind = T)]
 }
- 
+
 names(datapatches)[names(datapatches) == "V1"] = "animal" 
 names(datapatches)[names(datapatches) == "V2"] = "patch" 
 
+datapatches <- datapatches[datapatches$patch > 7, ]
 ### Data simulation
-bGlobal <- 7.22
-bLocal <- 5.03
+animalLength <- 15
 chosenLength <- animalLength
-itemsGenerated <- character()
-exploredPatch <- numeric()
 
-while (length(itemsGenerated) < chosenLength){
-  # Global search (starting word amongst 50 most frequent words)
-  start <- sample(1:50, 1)
-  currentItem <- as.character(freq$V1[start])
-  while (currentItem %in% itemsGenerated){
+foraging <- function(chosenLength){
+  bGlobal <- 7.22
+  bLocal <- 5.03
+  itemsGenerated <- character()
+  exploredPatch <- numeric()
+  
+  while (length(itemsGenerated) < chosenLength){
+    # Global search (starting word amongst 50 most frequent words)
     start <- sample(1:50, 1)
     currentItem <- as.character(freq$V1[start])
-  }
-  
-  # Set the corresponding patch of the word. If word is in multiple patches, choose one randomly
-  itemPatches <- datapatches$patch[which(datapatches$animal == currentItem, arr.ind = T)]
-  if (length(itemPatches) == 1){
-    currentPatch <- itemPatches
-  } else {
-    currentPatch <- sample(itemPatches, 1)
-  }
-
-  
-  itemsGenerated <- c(itemsGenerated, currentItem)
-  exploredPatch <- c(exploredPatch, currentPatch) 
-  
-  patchIndices <- which(datapatches$patch == currentPatch, arr.ind = T) 
-  patchAnimals <- as.character(datapatches$animal[patchIndices])
-  
-  goPatch <- T
-  
-  # Local Search (within patch)
-  while (goPatch == T & length(itemsGenerated) < chosenLength){
-    print(currentItem)
-    retrievalStrength <- vector()
-    globalCue <- vector()
-    localCue <- vector()
-    
-    for(i in 1:length(patchAnimals)){
-      globalCue[i] <- datapatches$frequency[patchIndices[i]]
-      localCue[i] <- ancos[currentItem, patchAnimals[i]]
+    while (currentItem %in% itemsGenerated){
+      start <- sample(1:50, 1)
+      currentItem <- as.character(freq$V1[start])
     }
-    retrievalStrength <- (globalCue^bGlobal)*(localCue^bLocal)/sum((globalCue^bGlobal)*(localCue^bLocal))
-    retrievalStrength[which(patchAnimals == currentItem)] <- 0
-    nextWord <- patchAnimals[which.max(retrievalStrength)]
     
-    # Return to global search if the next item is already in there (i.e. patch is 'exploited')
-    if (nextWord %in% itemsGenerated){
-      goPatch <- F
-    } else{
-      currentItem <- nextWord
-      itemsGenerated <- c(itemsGenerated, currentItem)
-      exploredPatch <- c(exploredPatch, currentPatch)
+    # Set the corresponding patch of the word. If word is in multiple patches, choose one randomly
+    itemPatches <- datapatches$patch[which(datapatches$animal == currentItem, arr.ind = T)]
+    if (length(itemPatches) == 1){
+      currentPatch <- itemPatches
+    } else {
+      currentPatch <- sample(itemPatches, 1)
     }
+    
+    
+    itemsGenerated <- c(itemsGenerated, currentItem)
+    exploredPatch <- c(exploredPatch, currentPatch) 
+    
+    patchIndices <- which(datapatches$patch == currentPatch, arr.ind = T) 
+    patchAnimals <- as.character(datapatches$animal[patchIndices])
+    
+    goPatch <- T
+    
+    # Local Search (within patch)
+    while (goPatch == T & length(itemsGenerated) < chosenLength){
+      print(currentItem)
+      retrievalStrength <- vector()
+      globalCue <- vector()
+      localCue <- vector()
+      
+      for(i in 1:length(patchAnimals)){
+        globalCue[i] <- datapatches$frequency[patchIndices[i]]
+        localCue[i] <- ancos[currentItem, patchAnimals[i]]
+      }
+      retrievalStrength <- (globalCue^bGlobal)*(localCue^bLocal)/sum((globalCue^bGlobal)*(localCue^bLocal))
+      retrievalStrength[which(patchAnimals == currentItem)] <- 0
+      nextWord <- patchAnimals[which.max(retrievalStrength)]
+      
+      # Return to global search if the next item is already in there (i.e. patch is 'exploited')
+      if (nextWord %in% itemsGenerated){
+        goPatch <- F
+      } else{
+        currentItem <- nextWord
+        itemsGenerated <- c(itemsGenerated, currentItem)
+        exploredPatch <- c(exploredPatch, currentPatch)
+      }
+    }
+    searchResults <- data.frame(itemsGenerated, exploredPatch)
   }
+  return(searchResults)
 }
-  
+
 # Network visualisation
 library(networkD3)
 
