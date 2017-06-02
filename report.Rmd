@@ -1,0 +1,157 @@
+---
+title: "Report: Simulation of optimal foraging"
+author: "Manon Schutte"
+date: "2 juni 2017"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 2
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+## Simulation of optimal foraging
+
+This software simulates optimal foraging in human memory. It visualizes the memory representations of 520 different animals, and generates a sequence of animals according to the optimal foraging theory.  
+Furthermore, it explains the optimal foraging theory.  
+The software and the required datafiles can be found on [GitHub][github]. 
+
+## Theoretical background
+
+The main purpose of the software is simulating a search within human memory for n animals, according to optimal foraging. Optimal foraging within semantic memory states that items can be retrieved from global and local environments. The local environments are in this case the different categories where animals belong to.  
+[Hills, Jones & Todd (2012)][hills] have studied this theory by modeling the memory search of different participants over a representation of the semantic search environment. They used word frequency and pairwise similarity as cues for the probability of retrieval for a specific item, as seen in the following formula:  
+![formula]   
+N = total of items in category  
+M = number of cues  
+Beta = saliency for a given cue  
+
+## Software purpose
+
+This software produces a Shiny app that explains the theory of optimal foraging, 
+and simulates data according to the formulas in the paper of [Hills, Jones & Todd (2012).][hills]
+
+## Software installation
+
+This software works with [R][r], so make sure you have installed this on your computer! 
+Required packages are shiny, networkD3 and markdown, so be sure these are installed within R. 
+
+To install the software, just download and open the zipfile 'Simulation of Optimal Foraging'.  
+You can run the app by executing runApp() in the command line. 
+
+## Software usage
+
+To launch the app, you can simply execute runApp() in the command line or, in case you are using R Studio, click on run app while running the ui.R or server.R file.  
+Once the Shiny app is launched, you will see the network that visualizes the semantic memory space, and an initial data simulation of 10 animals. With the slider you can set the length of how long you want your next search to be, and the simulation will start when you press the button 'Search!'.  
+
+![screenshot]
+
+## Software design
+
+The main code of this algorithm is stored in the server.R file. The main algorithm consists of 4 parts:  
+
+* Setting up the data  
+* Create the data structure needed for visualization  
+* Data simulation  
+* Server  
+
+#### Setting up data
+To use this software, several data matrices are needed. These data come from the appendices of the paper of [Hills.][hills]
+These matrices contain the different animals, their overall frequency (trained with the BEAGLE model on a 400-million-word Wikipedia corpus), and the pairwise cosine similarity between all the animal pairs.  
+These are used to set up the semantic memory representation and to extract the features that are needed for the data simulation. 
+
+#### Create data structure for visualization
+The semantic memory is represented by a radial network, with Animals as the central node, and then subdivided in different categories. In order to visualize the memory this way, a hierarchical list structure is needed. 
+This is done with the following loop:
+```
+for(i in 1:length(allPatches)){
+  patchAnimals <- which(datapatches$patch == allPatches[i], arr.ind = T) 
+  kids <- as.character(datapatches$animal[patchAnimals])
+  animalList[[2]][[i]] <- list(name = patchNames[i], children = as.list(kids))
+} 
+```
+
+#### Data simulation
+This is the most important part of the code, used for generating the items when searching in the semantic memory. It is wrapped in a function, to make it easily accesible within the Shiny server. It takes the number of animals set by the slider as argument, which fixes the number of items that needs to be generated. It returns a dataframe containing the generated items (i.e. animals) and their corresponding patches (i.e. categories). The function is based on the formula mentioned earlier:
+![formula]  
+
+The Beta values for the global and local cue are set in the beginning and are from the paper from Hills. 
+The function starts with picking a random animal from the 50 animals with the highest frequency, and then goes into the corresponding category/patch. For each item in this patch ('patchAnimals'), their retrieval probability is calculated (retrievalStrength) with the localCue (pairwise similarity with the current word) and the globalCue (frequency of the item). The probability for the current word is set to zero, and then the word with the highst probability is chosen as the next item.  
+If this item is already chosen before, the patch is seen as 'exploited' and the function picks another different animal from the global space. This process repeats itself untill the number of generated items is the same as the value set by the user. 
+
+```
+foraging <- function(chosenLength){
+  bGlobal <- 7.22
+  bLocal <- 5.03
+  itemsGenerated <- character()
+  exploredPatch <- character()
+  
+  while (length(itemsGenerated) < chosenLength){
+    
+    # Global search (starting word amongst 50 most frequent words)
+    start <- sample(1:50, 1)
+    currentItem <- as.character(freq$V1[start])
+    while (currentItem %in% itemsGenerated){
+      start <- sample(1:50, 1)
+      currentItem <- as.character(freq$V1[start])
+    }
+    
+    # Set the corresponding patch of the word. If word is in multiple patches, choose one randomly
+    itemPatches <- datapatches$patch[which(datapatches$animal == currentItem, arr.ind = T)]
+    if (length(itemPatches) == 1){
+      currentPatch <- itemPatches
+    } else {
+      currentPatch <- sample(itemPatches, 1)
+    }
+    
+    itemsGenerated <- c(itemsGenerated, currentItem)
+    exploredPatch <- c(exploredPatch, patchNames[currentPatch]) 
+    
+    patchIndices <- which(datapatches$patch == currentPatch, arr.ind = T) 
+    patchAnimals <- as.character(datapatches$animal[patchIndices])
+    
+    goPatch <- T
+    
+    # Local Search (within patch)
+    while (goPatch == T & length(itemsGenerated) < chosenLength){
+      retrievalStrength <- vector()
+      globalCue <- vector()
+      localCue <- vector()
+      
+      for(i in 1:length(patchAnimals)){
+        globalCue[i] <- datapatches$frequency[patchIndices[i]]
+        localCue[i] <- ancos[currentItem, patchAnimals[i]]
+      }
+      retrievalStrength <- (globalCue^bGlobal)*(localCue^bLocal)/sum((globalCue^bGlobal)*(localCue^bLocal))
+      retrievalStrength[which(patchAnimals == currentItem)] <- 0
+      nextWord <- patchAnimals[which.max(retrievalStrength)]
+      
+      # Return to global search if the next item is already in there (i.e. patch is 'exploited')
+      if (nextWord %in% itemsGenerated){
+        goPatch <- F
+      } else{
+        currentItem <- nextWord
+        itemsGenerated <- c(itemsGenerated, currentItem)
+        exploredPatch <- c(exploredPatch, patchNames[currentPatch])
+      }
+    }
+    searchResults <- data.frame(itemsGenerated, exploredPatch)
+    colnames(searchResults) <- c("Animal", "Category")
+  }
+  return(searchResults)
+}
+```
+
+## Additional comments
+
+There are some improvements in this code that are quite necessary to make, and other that are only for appearence itself. 
+Amongst the 50 most frequent animals, only 6 categories are represented. This means that only 6 categories are used for memory search, since these animals set the categories that are explored. This can be solved in several ways. For example, a cut off can be set for each category: no category can have more than 5 words in the frequency list. 
+
+For the visualization, I think it would be really cool to build a network that highlights the nodes that represent the generated animals in order, and also highlights the central 'Animal' node in between patches. This was my original idea, but unfortunately exploring took a lot of time, and would have taken a lot more to actually implement. Therefore I decided to visualize one static network of the semantic memory search. 
+
+[hills]: http://psycnet.apa.org/journals/rev/119/2/431/
+[r]: https://www.r-project.org/
+[github]: https://github.com/MSchutte/Optimal-foraging
+
+[formula]: formula.jpg
+[screenshot]: screenshot.jpg 
