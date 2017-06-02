@@ -5,7 +5,10 @@ date: "29 mei 2017"
 output: html_document
 ---
 
+## Simulation of optimal foraging in human memory
 
+This software simulates the optimal foraging within human semantic memory.  
+Here the theory is explained. 
 
 ## Optimal Foraging in animals
 

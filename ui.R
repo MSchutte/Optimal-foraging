@@ -24,6 +24,7 @@ shinyUI(fluidPage(
                    value = 10),
        # Actionbutton
        actionButton("goButton", "Search!"),
+       
        tableOutput("generateditems")
     ),
 

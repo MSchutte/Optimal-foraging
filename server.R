@@ -111,7 +111,7 @@ shinyServer(function(input, output) {
   })
   
   output$foragingnetwork <- renderRadialNetwork({
-    radialNetwork(animalList)
+    radialNetwork(animalList, fontSize = 13)
   })
   
 })
