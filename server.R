@@ -4,8 +4,6 @@ library(shiny)
 library(networkD3)
 
 ### Set up data 
-setwd("C:/Users/Manon Schutte/Documents/Studie - ResMas/Programming The Next Step/HillsOFPsychRev Online Data/PsychRev Online Data")
-rm(list=ls())
 load("onlinedata.Rdata")
 freq <- read.table("datafreqlistlog.txt")
 datapatches <- read.table("datagroups.txt")

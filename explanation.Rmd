@@ -8,11 +8,28 @@ output: html_document
 ## Simulation of optimal foraging in human memory
 
 This software simulates the optimal foraging within human semantic memory.  
-Here the theory is explained. 
+This part explains the theory on which the simulation is based. 
 
-## Optimal Foraging in animals
+### Optimal Foraging in animals
 
+Certain animals search for food occuring in spatial clusters. For example, berries on separate bushes, or nuts beneath a cluster of trees.  
+This searching follows a trade-off between the food intake and the time spended within a certain cluster. This is called [**optimal foraging**][foraging wiki].  
 
+![squirrel]
 
-## Optimal Foraging in human memory
+### Optimal Foraging in human memory
 
+Humans can also apply optimal foraging. This can occur when we are searching for cognitive resources divided in clusters, such as memory representations of words that are grouped in semantic categories.
+So, there is foraging in memory instead of in space. 
+The example used in this simulation is the representations of different animals. Animals are subdivided in different categories and as such represented in the brain. When listing a number of animals, you start with an animal and then search within the corresponding category.  
+When you have 'exploited' the category, you return to the main animal representation and go into another patch!
+
+### Simulation
+
+The simulation starts with an inital search of 10 animals. With the slider, you can decide how many animals your next search should consist of. Click 'Search!' and see the generated animals!  
+The search algorithm is based on the paper of [Hills, Jones & Todd, 2012.][hills]  
+The figure represents the categorization of the animals in human memory. 
+
+[foraging wiki]: https://en.wikipedia.org/wiki/Optimal_foraging_theory
+[hills]: http://psycnet.apa.org/journals/rev/119/2/431/
+[squirrel]: http://www.motherearthnews.com/-/media/Images/MEN/Editorial/Articles/Magazine-Articles/1988/09-01/A-Fall-Field-Guide-Foraging-for-Nuts/fallfieldguidenutsandsquirrel266.jpg
