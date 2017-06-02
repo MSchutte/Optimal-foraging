@@ -3,7 +3,7 @@ title: "Report: Simulation of optimal foraging"
 author: "Manon Schutte"
 date: "2 juni 2017"
 output: 
-  html_document:
+  pdf_document:
     toc: true
     toc_depth: 2
 ---
